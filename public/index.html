@@ -276,7 +276,7 @@
             try {
                 const veriler = await Promise.all(BIST30.map(async (sembol) => {
                     try {
-                        const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sembol}?interval=1d&range=1d`);
+                        const res = await fetch('/api/data/' + sembol);
                         const data = await res.json();
 
                         if (!data.chart || !data.chart.result || data.chart.error) {
