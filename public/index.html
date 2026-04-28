@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIST 30 Para Akışı Tarayıcısı</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e1a;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #8892a0;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-scan {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #fff;
+        }
+        .btn-scan:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,212,255,0.4); }
+        .btn-scan:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-giris {
+            background: linear-gradient(135deg, #00c853, #009624);
+            color: #fff;
+        }
+        .btn-giris:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,200,83,0.4); }
+        .btn-cikis {
+            background: linear-gradient(135deg, #ff1744, #d50000);
+            color: #fff;
+        }
+        .btn-cikis:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(255,23,68,0.4); }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: #151b2d;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #1e2740;
+        }
+        .stat-card h3 { color: #8892a0; font-size: 0.85em; margin-bottom: 8px; text-transform: uppercase; }
+        .stat-card .value { font-size: 1.8em; font-weight: 700; }
+        .positive { color: #00c853; }
+        .negative { color: #ff1744; }
+        .neutral { color: #ffd600; }
+        .tables-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 900px) { .tables-container { grid-template-columns: 1fr; } }
+        .table-section {
+            background: #151b2d;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #1e2740;
+        }
+        .table-section h2 {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid;
+            font-size: 1.3em;
+        }
+        .giris-header { color: #00c853; border-color: #00c853; }
+        .cikis-header { color: #ff1744; border-color: #ff1744; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 10px; text-align: left; }
+        th {
+            background: #0f1525;
+            color: #8892a0;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+        }
+        tr { border-bottom: 1px solid #1e2740; transition: background 0.2s; }
+        tr:hover { background: #1a2340; }
+        td { font-size: 0.95em; }
+        .sembol { font-weight: 700; color: #fff; }
+        .fiyat { font-family: 'Courier New', monospace; }
+        .degisim { font-weight: 600; }
+        .hacim { color: #b0b8c8; }
+        .para-giris { color: #00c853; font-weight: 700; }
+        .para-cikis { color: #ff1744; font-weight: 700; }
+        .skor-bar {
+            height: 6px;
+            background: #0f1525;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .skor-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #00d4ff;
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00d4ff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error {
+            background: #2d0a0a;
+            color: #ff5252;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .info-box {
+            background: #0f1525;
+            border-left: 3px solid #00d4ff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9em;
+            color: #8892a0;
+        }
+        .last-update {
+            text-align: center;
+            color: #8892a0;
+            font-size: 0.85em;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 BIST 30 Para Akışı Tarayıcısı</h1>
+        <p class="subtitle">Güçlü Alım (Para Girişi) & Güçlü Satış (Para Çıkışı) Taraması</p>
+
+        <div class="info-box">
+            <strong>📊 Nasıl Çalışır?</strong><br>
+            • <strong>Para Girişi:</strong> Yüksek hacim + Pozitif fiyat değişimi (Alım baskısı)<br>
+            • <strong>Para Çıkışı:</strong> Yüksek hacim + Negatif fiyat değişimi (Satış baskısı)<br>
+            • Skor = Hacim × Fiyat Değişimi (Para akışı gücü)
+        </div>
+
+        <div class="controls">
+            <button class="btn-scan" id="btnScan" onclick="tara()">🔄 Taramayı Başlat</button>
+            <button class="btn-giris" onclick="filtrele('giris')">📈 Sadece Giriş</button>
+            <button class="btn-cikis" onclick="filtrele('cikis')">📉 Sadece Çıkış</button>
+            <button class="btn-scan" style="background:#37474f;" onclick="filtrele('hepsi')">Tümünü Göster</button>
+        </div>
+
+        <div class="stats" id="stats" style="display:none;">
+            <div class="stat-card">
+                <h3>Toplam Hacim</h3>
+                <div class="value neutral" id="toplamHacim">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Güçlü Alım</h3>
+                <div class="value positive" id="girisSayi">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Güçlü Satış</h3>
+                <div class="value negative" id="cikisSayi">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Piyasa Eğilimi</h3>
+                <div class="value" id="egilim">-</div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display:none;">Veriler çekiliyor</div>
+        <div id="error" class="error" style="display:none;"></div>
+
+        <div class="tables-container" id="tables" style="display:none;">
+            <div class="table-section">
+                <h2 class="giris-header">🚀 Güçlü Para Girişi (Alım Baskısı)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Sembol</th>
+                            <th>Fiyat (TL)</th>
+                            <th>Değişim %</th>
+                            <th>Hacim</th>
+                            <th>Para Girişi</th>
+                            <th>Skor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="girisTablo"></tbody>
+                </table>
+            </div>
+            <div class="table-section">
+                <h2 class="cikis-header">🔴 Güçlü Para Çıkışı (Satış Baskısı)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Sembol</th>
+                            <th>Fiyat (TL)</th>
+                            <th>Değişim %</th>
+                            <th>Hacim</th>
+                            <th>Para Çıkışı</th>
+                            <th>Skor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cikisTablo"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <p class="last-update" id="lastUpdate"></p>
+    </div>
+
+    <script>
+        const BIST30 = [
+            'AKBNK.IS','ARCLK.IS','ASELS.IS','BIMAS.IS','EKGYO.IS',
+            'ENKAI.IS','EREGL.IS','FROTO.IS','GARAN.IS','HALKB.IS',
+            'ISCTR.IS','KCHOL.IS','KOZAA.IS','KOZAL.IS','KRDMD.IS',
+            'ODAS.IS','PETKM.IS','PGSUS.IS','SAHOL.IS','SASA.IS',
+            'SISE.IS','TAVHL.IS','TCELL.IS','THYAO.IS','TKFEN.IS',
+            'TOASO.IS','TUPRS.IS','VAKBN.IS','VESTL.IS','YKBNK.IS'
+        ];
+
+        let tumVeriler = [];
+        let aktifFiltre = 'hepsi';
+
+        async function tara() {
+            const btn = document.getElementById('btnScan');
+            btn.disabled = true;
+            btn.textContent = '⏳ Taranıyor...';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('tables').style.display = 'none';
+            document.getElementById('stats').style.display = 'none';
+
+            try {
+                const veriler = await Promise.all(BIST30.map(async (sembol) => {
+                    try {
+                        const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sembol}?interval=1d&range=1d`);
+                        const data = await res.json();
+
+                        if (!data.chart || !data.chart.result || data.chart.error) {
+                            return null;
+                        }
+
+                        const result = data.chart.result[0];
+                        const meta = result.meta;
+                        const quote = result.indicators.quote[0];
+
+                        const sonFiyat = meta.regularMarketPrice || meta.previousClose;
+                        const oncekiKapanis = meta.chartPreviousClose || meta.previousClose;
+                        const degisim = oncekiKapanis ? ((sonFiyat - oncekiKapanis) / oncekiKapanis * 100) : 0;
+                        const hacim = meta.regularMarketVolume || 0;
+
+                        // Para akışı skoru: Hacim × Değişim (mutlak değer)
+                        const paraAksiyonu = (hacim * sonFiyat * (degisim / 100)) / 1000000; // Milyon TL
+                        const skor = Math.abs(paraAksiyonu);
+
+                        return {
+                            sembol: sembol.replace('.IS', ''),
+                            fiyat: sonFiyat,
+                            degisim: degisim,
+                            hacim: hacim,
+                            paraAksiyonu: paraAksiyonu,
+                            skor: skor,
+                            tip: degisim >= 0 ? 'giris' : 'cikis'
+                        };
+                    } catch (e) {
+                        return null;
+                    }
+                }));
+
+                tumVeriler = veriler.filter(v => v !== null);
+
+                if (tumVeriler.length === 0) {
+                    throw new Error('Veri alınamadı. İnternet bağlantınızı kontrol edin.');
+                }
+
+                gosterVeriler();
+                document.getElementById('stats').style.display = 'grid';
+                document.getElementById('tables').style.display = 'grid';
+                document.getElementById('lastUpdate').textContent = `Son güncelleme: ${new Date().toLocaleString('tr-TR')}`;
+
+            } catch (err) {
+                document.getElementById('error').textContent = '❌ Hata: ' + err.message;
+                document.getElementById('error').style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Taramayı Başlat';
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function formatHacim(hacim) {
+            if (hacim >= 1000000000) return (hacim / 1000000000).toFixed(2) + 'B';
+            if (hacim >= 1000000) return (hacim / 1000000).toFixed(2) + 'M';
+            if (hacim >= 1000) return (hacim / 1000).toFixed(1) + 'K';
+            return hacim.toString();
+        }
+
+        function formatPara(tutar) {
+            if (Math.abs(tutar) >= 1000) return (tutar / 1000).toFixed(2) + ' Milyar ₺';
+            return tutar.toFixed(2) + ' Milyon ₺';
+        }
+
+        function gosterVeriler() {
+            const girisler = tumVeriler.filter(v => v.tip === 'giris').sort((a, b) => b.skor - a.skor);
+            const cikislar = tumVeriler.filter(v => v.tip === 'cikis').sort((a, b) => b.skor - a.skor);
+
+            const toplamHacim = tumVeriler.reduce((acc, v) => acc + v.hacim, 0);
+            const toplamGiris = girisler.reduce((acc, v) => acc + v.paraAksiyonu, 0);
+            const toplamCikis = cikislar.reduce((acc, v) => acc + Math.abs(v.paraAksiyonu), 0);
+
+            document.getElementById('toplamHacim').textContent = formatHacim(toplamHacim);
+            document.getElementById('girisSayi').textContent = girisler.length + ' Hisse';
+            document.getElementById('cikisSayi').textContent = cikislar.length + ' Hisse';
+
+            const egilimEl = document.getElementById('egilim');
+            if (toplamGiris > toplamCikis) {
+                egilimEl.textContent = '🟢 Alıcılı';
+                egilimEl.className = 'value positive';
+            } else if (toplamCikis > toplamGiris) {
+                egilimEl.textContent = '🔴 Satıcılı';
+                egilimEl.className = 'value negative';
+            } else {
+                egilimEl.textContent = '🟡 Nötr';
+                egilimEl.className = 'value neutral';
+            }
+
+            const maxSkor = Math.max(...tumVeriler.map(v => v.skor), 1);
+
+            function satirOlustur(v, i, tip) {
+                const skorYuzde = (v.skor / maxSkor * 100).toFixed(1);
+                const renk = tip === 'giris' ? '#00c853' : '#ff1744';
+                return `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td class="sembol">${v.sembol}</td>
+                        <td class="fiyat">${v.fiyat.toFixed(2)}</td>
+                        <td class="degisim ${v.degisim >= 0 ? 'positive' : 'negative'}">${v.degisim >= 0 ? '+' : ''}${v.degisim.toFixed(2)}%</td>
+                        <td class="hacim">${formatHacim(v.hacim)}</td>
+                        <td class="${tip === 'giris' ? 'para-giris' : 'para-cikis'}">${formatPara(Math.abs(v.paraAksiyonu))}</td>
+                        <td>
+                            <div style="font-size:0.85em;color:#8892a0">${v.skor.toFixed(1)}</div>
+                            <div class="skor-bar"><div class="skor-fill" style="width:${skorYuzde}%;background:${renk}"></div></div>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById('girisTablo').innerHTML = girisler.map((v, i) => satirOlustur(v, i, 'giris')).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:#8892a0">Veri yok</td></tr>';
+            document.getElementById('cikisTablo').innerHTML = cikislar.map((v, i) => satirOlustur(v, i, 'cikis')).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:#8892a0">Veri yok</td></tr>';
+        }
+
+        function filtrele(tip) {
+            aktifFiltre = tip;
+            const container = document.getElementById('tables');
+            const sections = container.querySelectorAll('.table-section');
+
+            if (tip === 'giris') {
+                sections[0].style.display = 'block';
+                sections[1].style.display = 'none';
+            } else if (tip === 'cikis') {
+                sections[0].style.display = 'none';
+                sections[1].style.display = 'block';
+            } else {
+                sections[0].style.display = 'block';
+                sections[1].style.display = 'block';
+            }
+        }
+
+        // Sayfa açılışında otomatik tarama
+        window.onload = () => tara();
+    </script>
+</body>
+</html>
